@@ -37,7 +37,7 @@ namespace PlaygilePlayground
             string result = _progressData.AddDataAsLines(progressDataUnconvertedStrings);
             if (!string.IsNullOrEmpty(result)) return result;
 
-            //adjust data to time line
+            //adjust data to time line in dates
             if (_progressData.GetEstimationDatesList().Count() == 0) return result;
 
             DateTime lastDateTime = _progressData.GetEstimationDatesList().Last();
