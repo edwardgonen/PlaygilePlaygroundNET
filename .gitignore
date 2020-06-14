@@ -341,3 +341,5 @@ healthchecksdb
 
 #Angular project for playgile playground
 PlaygilePlaygroundAngular
+#Jira plugin project for playgile playground
+PlaygilePlaygroundJira
