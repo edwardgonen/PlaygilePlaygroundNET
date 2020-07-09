@@ -99,19 +99,9 @@ namespace PlaygilePlayground
             {
                 pointDate = pointDate.AddDays(SprintLength);
                 endSprintExpectation = CalculateIdealEstimationByDate(lastSprintEnd, pointDate, lastFullSprintEndValue, dailyVelocity);
-                if (continueAddingProgressPoints)
-                {
-                    tmpPair = new DataPair(pointDate, Math.Max(endSprintExpectation, 0));
-                    _progressData.AddDataPair(tmpPair);
-                    if (endSprintExpectation <= 0) continueAddingProgressPoints = false;
-                }
+                continueAddingProgressPoints = AddDataPairToList(continueAddingProgressPoints, pointDate, endSprintExpectation, _progressData);
                 idealEstimation = CalculateIdealEstimationByDate(startProjectDateTime.AddDays(-1), pointDate, initialProjectEstimation, dailyVelocity);
-                if (continueAddingIdealPoints)
-                {
-                    tmpPair = new DataPair(pointDate, Math.Max(idealEstimation, 0));
-                    _idealData.AddDataPair(tmpPair);
-                    if (idealEstimation <= 0) continueAddingIdealPoints = false;
-                }
+                continueAddingIdealPoints = AddDataPairToList(continueAddingIdealPoints, pointDate, idealEstimation, _idealData);
             } while (endSprintExpectation > 0 || idealEstimation > 0);
 
             DateTime idealProjectEnd = default;
@@ -191,7 +181,17 @@ namespace PlaygilePlayground
 
             return result;
         }
-
+        private bool AddDataPairToList(bool continueAddingPoints, DateTime date, double estimation, ProgressData data)
+        {
+            bool result = continueAddingPoints;
+            if (continueAddingPoints)
+            {
+                DataPair tmpPair = new DataPair(date, Math.Max(estimation, 0));
+                data.AddDataPair(tmpPair);
+                if (estimation <= 0) result = false;
+            }
+            return result;
+        }
         private double CalculateIdealEstimationByDate(DateTime projectStartDate, DateTime currentDate, double initialProjectEstimation, double dailyVelocity)
         {
             int distanceDays = (currentDate - projectStartDate).Days;
