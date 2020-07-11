@@ -60,16 +60,18 @@ namespace PlaygilePlayground
             DataPair tmpPair;
             int daysLeftSinceLastUpdateTillEndOfSprint = SprintLength - 1 - (lastDateTimeInProjectData - startProjectDateTime).Days % SprintLength;
             DateTime closestSprintEnd = lastDateTimeInProjectData.AddDays(daysLeftSinceLastUpdateTillEndOfSprint);
+
+            double endSprintExpectation  = 0;
+            double idealEstimation = 0;
+
             if (daysLeftSinceLastUpdateTillEndOfSprint > 0)
             {
                 //add predicted closest sprint end
                 double remainingWorkInRecentSprint = dailyVelocity * ((double)(daysLeftSinceLastUpdateTillEndOfSprint));
-                double estimationHowWeFinishCurrentSprint = _progressData.GetEstimationValuesList().Last() - remainingWorkInRecentSprint;
-                if (estimationHowWeFinishCurrentSprint > 0)
-                {
-                    tmpPair = new DataPair(closestSprintEnd, estimationHowWeFinishCurrentSprint);
-                    _progressData.AddDataPair(tmpPair);
-                }
+                endSprintExpectation = Math.Max(_progressData.GetEstimationValuesList().Last() - remainingWorkInRecentSprint, 0);
+
+                tmpPair = new DataPair(closestSprintEnd, endSprintExpectation);
+                _progressData.AddDataPair(tmpPair);
             }
             //to this point the predicted array contains real data from the past.
             //The dates of those estimations may not be on the sprint end
@@ -80,29 +82,29 @@ namespace PlaygilePlayground
             for (int i = 1; i < _progressData.Length(); i++)
             {
                 //calculate this point distance from the project start
-                double tmpEstimation = CalculateIdealEstimationByDate(startProjectDateTime.AddDays(-1), _progressData.GetElementAtIndex(i).Date, initialProjectEstimation, dailyVelocity);
-                tmpPair = new DataPair(_progressData.GetElementAtIndex(i).Date, tmpEstimation);
+                idealEstimation = CalculateIdealEstimationByDate(startProjectDateTime, _progressData.GetElementAtIndex(i).Date, initialProjectEstimation, dailyVelocity);
+                tmpPair = new DataPair(_progressData.GetElementAtIndex(i).Date, idealEstimation);
                 _idealData.AddDataPair(tmpPair);
+                if (idealEstimation <= 0) break;
             }
 
 
             //calculate prediction
             //first let's set the predicted point to the end of recent sprint
             DateTime lastSprintEnd = closestSprintEnd;
-            double endSprintExpectation;
-            double idealEstimation;
+
             double lastFullSprintEndValue = _progressData.GetEstimationValuesList().Last();
             DateTime pointDate = lastSprintEnd;
             bool continueAddingIdealPoints = true;
             bool continueAddingProgressPoints = true;
-            do
+            while (endSprintExpectation > 0 || idealEstimation > 0)
             {
                 pointDate = pointDate.AddDays(SprintLength);
                 endSprintExpectation = CalculateIdealEstimationByDate(lastSprintEnd, pointDate, lastFullSprintEndValue, dailyVelocity);
                 continueAddingProgressPoints = AddDataPairToList(continueAddingProgressPoints, pointDate, endSprintExpectation, _progressData);
-                idealEstimation = CalculateIdealEstimationByDate(startProjectDateTime.AddDays(-1), pointDate, initialProjectEstimation, dailyVelocity);
+                idealEstimation = CalculateIdealEstimationByDate(startProjectDateTime, pointDate, initialProjectEstimation, dailyVelocity);
                 continueAddingIdealPoints = AddDataPairToList(continueAddingIdealPoints, pointDate, idealEstimation, _idealData);
-            } while (endSprintExpectation > 0 || idealEstimation > 0);
+            };
 
             DateTime idealProjectEnd = default;
             //end of the project for each set is the first date where the estimation is 0
@@ -187,15 +189,15 @@ namespace PlaygilePlayground
             if (continueAddingPoints)
             {
                 DataPair tmpPair = new DataPair(date, Math.Max(estimation, 0));
-                data.AddDataPair(tmpPair);
                 if (estimation <= 0) result = false;
+                data.AddDataPair(tmpPair);
             }
             return result;
         }
         private double CalculateIdealEstimationByDate(DateTime projectStartDate, DateTime currentDate, double initialProjectEstimation, double dailyVelocity)
         {
             int distanceDays = (currentDate - projectStartDate).Days;
-            return (initialProjectEstimation - distanceDays * dailyVelocity);
+            return Math.Max(initialProjectEstimation - distanceDays * dailyVelocity, 0);
         }
         public static ArrayList LoadDataFromFile(string fileName)
         {
