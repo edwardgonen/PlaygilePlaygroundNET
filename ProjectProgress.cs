@@ -55,6 +55,7 @@ namespace PlaygilePlayground
                 initialProjectEstimation = initialEstimationSpecified;
             else
                 initialProjectEstimation = _progressData.GetEstimationValuesList().First();
+
             double dailyVelocity = _teamVelocity / (double)SprintLength;
             DateTime lastDateTimeInProjectData = _progressData.GetEstimationDatesList().Last();
             DataPair tmpPair;
@@ -106,22 +107,21 @@ namespace PlaygilePlayground
                 continueAddingIdealPoints = AddDataPairToList(continueAddingIdealPoints, pointDate, idealEstimation, _idealData);
             };
 
-            DateTime idealProjectEnd = default;
-            //end of the project for each set is the first date where the estimation is 0
-            for (int i = 0; i < _idealData.GetEstimationValuesList().Count(); i++)
+            //end of the project for each set is the last date where the estimation is 0 while the next one is not 0
+            DateTime idealProjectEnd = _idealData.GetElementAtIndex(0).Date;
+            for (int i = _idealData.GetEstimationValuesList().Count() - 1; i > 0; i--)
             {
-                if (_idealData.GetElementAtIndex(i).RemainingEstimation <= 0)
+                if (_idealData.GetElementAtIndex(i).RemainingEstimation <= 0 && _idealData.GetElementAtIndex(i - 1).RemainingEstimation > 0)
                 {
                     idealProjectEnd = _idealData.GetElementAtIndex(i).Date;
                     break;
                 }
             }
-
-            DateTime predictedProjectEnd = default;
-            //end of the project for each set is the first date where the estimation is 0
-            for (int i = 0; i < _progressData.GetEstimationValuesList().Count(); i++)
+            //end of the project for each set is the last date where the estimation is 0 while the next one is not 0
+            DateTime predictedProjectEnd = _progressData.GetElementAtIndex(0).Date;
+            for (int i = _progressData.GetEstimationValuesList().Count() - 1; i > 0; i--)
             {
-                if (_progressData.GetElementAtIndex(i).RemainingEstimation <= 0)
+                if (_progressData.GetElementAtIndex(i).RemainingEstimation <= 0 && _progressData.GetElementAtIndex(i - 1).RemainingEstimation > 0)
                 {
                     predictedProjectEnd = _progressData.GetElementAtIndex(i).Date;
                     break;
